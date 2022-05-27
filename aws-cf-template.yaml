@@ -1,29 +1,78 @@
 AWSTemplateFormatVersion: 2010-09-09
+Parameters:
+
+  DefaultRootObject:
+    Description: 'The default path for the index document.'
+    Type: String
+    Default: 'index.html'
+
+  ErrorPagePath:
+    Description: 'The path of the error page for the website (e.g. /error.html). Must be a root-relative path.'
+    Type: String
+    Default: '/error.html'
+
+
 Resources:
   S3Bucket:
     Type: 'AWS::S3::Bucket'
-    Properties:
-      AccessControl: PublicRead
-      WebsiteConfiguration:
-        IndexDocument: index.html
     DeletionPolicy: Retain
+
   BucketPolicy:
     Type: 'AWS::S3::BucketPolicy'
     Properties:
-      PolicyDocument:
-        Id: MyPolicy
-        Version: 2012-10-17
-        Statement:
-          - Sid: PublicReadForGetBucketObjects
-            Effect: Allow
-            Principal: '*'
-            Action: 's3:GetObject'
-            Resource: !Join 
-              - ''
-              - - 'arn:aws:s3:::'
-                - !Ref S3Bucket
-                - /*
       Bucket: !Ref S3Bucket
+      PolicyDocument:
+        Statement:
+          - Action: 's3:GetObject'
+            Effect: Allow
+            Resource: !Sub 'arn:aws:s3:::${S3Bucket}/*'
+            Principal:
+              CanonicalUser: !GetAtt CloudFrontOriginAccessIdentity.S3CanonicalUserId
+
+  CloudFrontOriginAccessIdentity:
+    Type: 'AWS::CloudFront::CloudFrontOriginAccessIdentity'
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: !Ref S3Bucket
+
+  CloudFrontDistribution:
+      Type: 'AWS::CloudFront::Distribution'
+      Properties:
+        DistributionConfig:
+          CustomErrorResponses:
+          - ErrorCode: 403 # not found
+            ResponseCode: 404
+            ResponsePagePath: !Ref ErrorPagePath
+          DefaultCacheBehavior:
+            AllowedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
+            CachedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
+            Compress: true
+            DefaultTTL: 3600 # in seconds
+            ForwardedValues:
+              Cookies:
+                Forward: none
+              QueryString: false
+            MaxTTL: 86400 # in seconds
+            MinTTL: 60 # in seconds
+            TargetOriginId: s3origin
+            ViewerProtocolPolicy: 'redirect-to-https'
+          DefaultRootObject: !Ref DefaultRootObject
+          Enabled: true
+          HttpVersion: http2
+          Origins:
+          - DomainName: !GetAtt 'S3Bucket.DomainName'
+            Id: s3origin
+            S3OriginConfig:
+              OriginAccessIdentity: !Sub 'origin-access-identity/cloudfront/${CloudFrontOriginAccessIdentity}'
+          PriceClass: 'PriceClass_All'
+
+   
 Outputs:
   WebsiteURL:
     Value: !GetAtt 
@@ -40,3 +89,6 @@ Outputs:
           - S3Bucket
           - DomainName
     Description: Name of S3 bucket to hold website content
+  Domain:
+      Description: 'Cloudfront Domain'
+      Value: !GetAtt CloudFrontDistribution.DomainName

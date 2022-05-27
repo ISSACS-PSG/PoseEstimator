@@ -20,28 +20,28 @@ To publish this site to AWS using [CloudFormation](https://aws.amazon.com/cloudf
 
 If you have your own webhost, just copy all files in the [`src`](./src) to the host. If you'd like to deploy to AWS using [CloudFormation](https://aws.amazon.com/cloudformation/), [CloudFront](https://aws.amazon.com/cloudfront/) and [S3](https://aws.amazon.com/s3), use the included [`deploy.sh`](./deploy.sh) to setup the stack and deploy the code.
 
-```sh
-% ./deploy.sh
+```shell
+./deploy.sh
 ```
 
 Once you've setup your stack, you use the following to only push code changes:
 
-```sh
-% ./deploy.sh code
+```shell
+./deploy.sh code
 ```
 
 
 ## Built With
 	
-	- [p5.js](https://p5js.org)
-	- [MoveNet](https://tensorflow.google.cn/hub/tutorials/movenet)
-	- [Choose a License](https://choosealicense.com) - Used to choose the license
+- [p5.js](https://p5js.org)
+- [MoveNet](https://tensorflow.google.cn/hub/tutorials/movenet)
+- [Choose a License](https://choosealicense.com) - Used to choose the license
 
 
 ## Authors
 
   - **Chris Nurre**
-    [CNurre](https://github.com/cnurre)
+    [GitHub: curre](https://github.com/cnurre)
 
 
 ## License

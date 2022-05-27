@@ -7,13 +7,6 @@ let offset = {x: 0, y: 0};
 let aspectFillScale = 1;
 
 
-function videoReady() {
-    console.log("video ready");
-    frameRate(updateRate);
-    
-    getPoses();
-}
-
 async function setup() {
     detector = await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet);
 
@@ -22,6 +15,13 @@ async function setup() {
 
     // Hide the video element, and just show the canvas
     video.hide();
+}
+
+function videoReady() {
+    console.log("video ready");
+    frameRate(updateRate);
+    
+    getPoses();
 }
 
 function windowResized() {

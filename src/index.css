@@ -11,4 +11,6 @@ canvas {
 
 body>* {
   grid-column: auto;
+  width: auto;
+  height: auto;
 }

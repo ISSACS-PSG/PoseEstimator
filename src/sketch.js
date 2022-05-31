@@ -9,14 +9,16 @@ let aspectFillScale = 1;
 let logging = false;
 let loggingButton;
 let downloadButton;
+let cameraDropdown;
+let currentCameraId;
 
 async function setup() {
     detector = await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet);
-    video = await createCapture(VIDEO, videoReady);
 
-    // Hide the video element, and just show the canvas
-    video.hide();
-    
+    getCameras().then(function(devices){
+        startCameraCapture(devices[0].id);
+    });
+
     createCanvas(windowWidth, windowHeight);
     
     loggingButton = createButton('Start');
@@ -25,28 +27,108 @@ async function setup() {
     downloadButton = createButton('Download');
     downloadButton.mousePressed(downloadCSV);
     
-    updateButtons();
     downloadButton.hide();
+
+    updateCameraDropdown();
+    updateUI();
 }
 
-function windowResized() {
-    resizeCanvas(windowWidth, windowHeight); 
-    updateButtons(); 
+// Camera Handling
+async function startCameraCapture(deviceId) {
+    if (video) {
+        video.remove();
+    }
+    
+    let videoConstraints = {
+        audio: false,
+        video: {
+            facingMode: "environment",
+        }
+    };
+    
+    if (deviceId) {
+        videoConstraints.video = {
+            deviceId: deviceId
+        }
+        
+        currentCameraId = deviceId;
+    }
+    
+    video = await createCapture(videoConstraints, videoReady);
+   
+    // Hide the video element, and just show the canvas
+    video.hide();
 }
 
-function videoReady() {
+async function getCameras() {
+    let cameras = [];
+
+    await navigator.mediaDevices.enumerateDevices().then(function(devices) {
+        devices.forEach(function(device) {
+            if (device.kind == 'videoinput') {
+                cameras.push({
+                    label: device.label,
+                    id: device.deviceId
+                });
+            }
+        });
+        return cameras;
+    }).catch(function(err) {
+        console.log(err.name + ": " + err.message);
+    });
+
+    return cameras;
+}
+
+async function updateCameraDropdown() {
+    if (cameraDropdown !== undefined) {
+        cameraDropdown.remove();
+    }
+    
+    cameraDropdown = createSelect();
+    cameraDropdown.changed(handleCameraSelection);
+
+    await getCameras().then(function(devices){
+        devices.forEach(function(device) {
+            cameraDropdown.option(device.label, device.id);
+        });
+    });
+    
+    cameraDropdown.selected(currentCameraId);
+        
+    updateUI();
+}
+
+function handleCameraSelection() {
+    startCameraCapture(cameraDropdown.value());
+}
+
+async function videoReady() {
     while (!video.loadedmetadata) {}
     
-    console.log("video ready");
+    updateCameraDropdown();
     
+    console.log("video ready");
     frameRate(updateRate);
     
     getPoses();
 }
 
+
+function windowResized() {
+    resizeCanvas(windowWidth, windowHeight); 
+    updateUI(); 
+}
+
+
 async function getPoses() {
-    poses = await detector.estimatePoses(video.elt);
     setTimeout(getPoses, (1/updateRate) * 1000.0);
+    
+    if (video === undefined || !video.loadedmetadata) {
+        return;
+    }
+    
+    poses = await detector.estimatePoses(video.elt);
 }
 
 
@@ -55,22 +137,22 @@ function draw() {
     if (video === undefined) {
         return;
     }
-    
+
     xFillScale = width / video.width;
     yFillScale = height / video.height;
-    
+
     aspectFillScale = max(xFillScale, yFillScale);
     aspectFillWidth = video.width * aspectFillScale;
     aspectFillHeight = video.height * aspectFillScale;
-    
+
     xOffset = (width - aspectFillWidth)/2;
     yOffset = (height - aspectFillHeight)/2;
-    
+
     offset = {x: xOffset, y: yOffset};
-    
+
     image(video, offset.x, offset.y, aspectFillWidth, aspectFillHeight);
-    
-    // We can call both functions to draw all keypoints and the skeletons
+
+    // // We can call both functions to draw all keypoints and the skeletons
     drawKeypoints();
     drawSkeleton();
     
@@ -118,11 +200,7 @@ function drawSkeleton() {
     }
 }
 
-
-// Logging
-let loggedPoints = [];
-
-function updateButtons() {
+function updateUI() {
     const padding = 20;
     const buttonWidth = windowWidth - (2 * padding);
     const buttonHeight = min(100, (windowHeight * 0.1));
@@ -135,22 +213,30 @@ function updateButtons() {
     
     if (logging) {
         downloadButton.hide();
-    } else {
+    } else if (loggedPoints.length > 0) {
         downloadButton.show();
     }
+    
+    cameraDropdown.position(padding, padding);
 }
 
-function toggleLogging() {    
+
+// Logging
+let loggedPoints = [];
+
+function toggleLogging() {
+    startCameraCapture(1);
+    
     if (!logging) {
         loggedPoints = [];
         loggingButton.html("Stop");
     } else {
         loggingButton.html("Start");
     }
-    
+
     logging = !logging;
-    
-    updateButtons();
+
+    updateUI();
 }
 
 function logPoints() {

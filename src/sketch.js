@@ -15,18 +15,16 @@ let currentCameraId;
 async function setup() {
     detector = await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet);
 
-    getCameras().then(function(devices){
-        startCameraCapture(devices[0].id);
-    });
+    startCameraCapture();
 
     createCanvas(windowWidth, windowHeight);
     
     loggingButton = createButton('Start');
     loggingButton.mousePressed(toggleLogging);
-    
+
     downloadButton = createButton('Download');
     downloadButton.mousePressed(downloadCSV);
-    
+
     downloadButton.hide();
 
     updateCameraDropdown();
@@ -46,12 +44,10 @@ async function startCameraCapture(deviceId) {
         }
     };
     
-    if (deviceId) {
+    if (deviceId && deviceId.length > 0) {
         videoConstraints.video = {
             deviceId: deviceId
         }
-        
-        currentCameraId = deviceId;
     }
     
     video = await createCapture(videoConstraints, videoReady);
@@ -77,10 +73,15 @@ async function getCameras() {
         console.log(err.name + ": " + err.message);
     });
 
+
+    console.log("Loaded Cameras");
+    console.log(cameras);
     return cameras;
 }
 
 async function updateCameraDropdown() {
+    console.log("Update Camera Dropdown");
+    
     if (cameraDropdown !== undefined) {
         cameraDropdown.remove();
     }
@@ -94,9 +95,9 @@ async function updateCameraDropdown() {
         });
     });
     
-    cameraDropdown.selected(currentCameraId);
-        
-    updateUI();
+    if (currentCameraId) {
+        cameraDropdown.selected(currentCameraId);
+    }
 }
 
 function handleCameraSelection() {
@@ -106,7 +107,10 @@ function handleCameraSelection() {
 async function videoReady() {
     while (!video.loadedmetadata) {}
     
+    currentCameraId = video.elt.srcObject.getVideoTracks()[0].getSettings().deviceId;
+    
     updateCameraDropdown();
+    updateUI();
     
     console.log("video ready");
     frameRate(updateRate);
@@ -225,8 +229,6 @@ function updateUI() {
 let loggedPoints = [];
 
 function toggleLogging() {
-    startCameraCapture(1);
-    
     if (!logging) {
         loggedPoints = [];
         loggingButton.html("Stop");

@@ -207,7 +207,7 @@ function drawSkeleton() {
 function updateUI() {
     const padding = 20;
     const buttonWidth = windowWidth - (2 * padding);
-    const buttonHeight = min(100, (windowHeight * 0.1));
+    const buttonHeight = windowHeight * 0.1;
     
     loggingButton.size(buttonWidth, buttonHeight);
     loggingButton.position(padding, windowHeight - padding - buttonHeight);

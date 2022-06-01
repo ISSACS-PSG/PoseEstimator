@@ -40,7 +40,7 @@ Once you've setup your stack, you use the following to only push code changes:
 
 ## Authors
 
-  - Chris Nurre:** [GitHub: cnurre](https://github.com/cnurre)
+  - **Chris Nurre:** [GitHub: cnurre](https://github.com/cnurre)
 
 
 ## License

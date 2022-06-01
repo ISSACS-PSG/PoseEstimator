@@ -70,7 +70,7 @@ Resources:
             Id: s3origin
             S3OriginConfig:
               OriginAccessIdentity: !Sub 'origin-access-identity/cloudfront/${CloudFrontOriginAccessIdentity}'
-          PriceClass: 'PriceClass_All'
+          PriceClass: 'PriceClass_100'
 
    
 Outputs:

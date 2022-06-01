@@ -14,3 +14,7 @@ body>* {
   width: auto;
   height: auto;
 }
+
+body > select {
+  padding-right: 2rem;
+}

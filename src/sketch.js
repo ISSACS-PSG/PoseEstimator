@@ -221,7 +221,7 @@ function updateUI() {
     if (showDownloadButton) {
         downloadButton.show();
         
-        buttonWidth = (windowWidth / 2) - (3 * padding);
+        buttonWidth = (windowWidth - (3 * padding)) / 2 ;
         loggingButton.size(buttonWidth, buttonHeight);        
         
         downloadButton.size(buttonWidth, buttonHeight);

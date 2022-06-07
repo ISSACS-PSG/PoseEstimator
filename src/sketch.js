@@ -11,7 +11,9 @@ let loggingButton;
 let downloadButton;
 let cameraDropdown;
 let currentCameraId;
-let detectorModel = poseDetection.SupportedModels.MoveNet;
+
+const detectorModel = poseDetection.SupportedModels.MoveNet;
+const keypointIndexes = poseDetection.util.getKeypointIndexByName(detectorModel);
 
 async function setup() {
     detector = await poseDetection.createDetector(detectorModel);
@@ -161,6 +163,7 @@ function draw() {
     // // We can call both functions to draw all keypoints and the skeletons
     drawKeypoints();
     drawSkeleton();
+    drawAngles();
     
     logPoints();
 }
@@ -177,10 +180,11 @@ function drawKeypoints() {
       if (keypoint.score > scoreThreshold) {
         fill(255, 0, 0);
         stroke(255, 255, 255);
+        strokeWeight(1);
         ellipse((keypoint.x * aspectFillScale) + offset.x, (keypoint.y * aspectFillScale) + offset.y, 10, 10);
       }
     }
-    
+
     return; // Only draw one pose
   }
 }
@@ -198,6 +202,7 @@ function drawSkeleton() {
             const score2 = kp2.score != null ? kp2.score : 1;
             if (score1 >= scoreThreshold && score2 >= scoreThreshold) {
               stroke(255, 0, 0);
+              strokeWeight(1);
               line((kp1.x * aspectFillScale) + offset.x, (kp1.y * aspectFillScale) + offset.y, (kp2.x * aspectFillScale) + offset.x, (kp2.y * aspectFillScale) + offset.y);
             }
         });
@@ -206,7 +211,68 @@ function drawSkeleton() {
     }
 }
 
+function drawAngles() {
+    angleMode(DEGREES);
+    
+    let fontSize = 32;
+    textSize(fontSize);
+    textAlign(CENTER);
+    
+    for (let i = 0; i < poses.length; i += 1) {
+        const pose = poses[i];
+        const joints = getJointsFor(pose);
+        
+        Object.keys(joints).forEach(jointName => {
+            const j = joints[jointName];
+            
+            if (j[0].score > scoreThreshold && j[1].score > scoreThreshold && j[2].score > scoreThreshold) {
+                
+                let vectors = calculateVectorsFor(j)
+                let angle = vectors.angle.toFixed(0);
+                let jointPoint = convertPointForCanvas(j[1]);
+                
+                stroke(255);
+                strokeWeight(4);
+                text(angle, jointPoint.x, jointPoint.y);
+            }
+        });
+        
+        return; // Only draw angles for one pose
+    }
+}
 
+function convertPointForCanvas(point) {
+    return {
+        x: (point.x * aspectFillScale) + offset.x,
+        y: (point.y * aspectFillScale) + offset.y,
+    };
+}
+
+function getJointsFor(pose) {
+    const keypoints = pose.keypoints;
+    return {
+        // nose is good for quick testing without needing fully body in frame
+        // nose: [keypoints[keypointIndexes.left_eye], keypoints[keypointIndexes.nose], keypoints[keypointIndexes.right_eye]],
+        left_elbow: [keypoints[keypointIndexes.left_shoulder], keypoints[keypointIndexes.left_elbow], keypoints[keypointIndexes.left_wrist]],
+        right_elbow: [keypoints[keypointIndexes.right_shoulder], keypoints[keypointIndexes.right_elbow], keypoints[keypointIndexes.right_wrist]],
+        left_armpit: [keypoints[keypointIndexes.left_hip], keypoints[keypointIndexes.left_shoulder], keypoints[keypointIndexes.left_elbow]],
+        right_armpit: [keypoints[keypointIndexes.right_hip], keypoints[keypointIndexes.right_shoulder], keypoints[keypointIndexes.right_elbow]],
+        left_knee: [keypoints[keypointIndexes.left_hip], keypoints[keypointIndexes.left_knee], keypoints[keypointIndexes.left_ankle]],
+        right_knee: [keypoints[keypointIndexes.right_hip], keypoints[keypointIndexes.right_knee], keypoints[keypointIndexes.right_ankle]],
+    };
+}
+
+function calculateVectorsFor(joint) {
+    const v1 = createVector(joint[1].x - joint[0].x, joint[1].y - joint[0].y);
+    const v2 = createVector(joint[1].x - joint[2].x, joint[1].y - joint[2].y);
+    
+    return {
+        angle: v1.angleBetween(v2),
+        v1: v1,
+        v2: v2
+    };
+
+}
 
 function updateUI() {
     const padding = 20;

@@ -22,6 +22,7 @@ async function setup() {
     
     loggingButton = createButton('Start');
     loggingButton.mousePressed(toggleLogging);
+    loggingButton.style('background', '#00ff00');
 
     downloadButton = createButton('Download');
     downloadButton.mousePressed(downloadCSV);
@@ -205,21 +206,28 @@ function drawSkeleton() {
     }
 }
 
+
+
 function updateUI() {
     const padding = 20;
-    const buttonWidth = windowWidth - (2 * padding);
+    let buttonWidth = windowWidth - (2 * padding);
     const buttonHeight = windowHeight * 0.1;
     
     loggingButton.size(buttonWidth, buttonHeight);
     loggingButton.position(padding, windowHeight - padding - buttonHeight);
     
-    downloadButton.size(buttonWidth, buttonHeight);
-    downloadButton.position(padding, padding);
+    const showDownloadButton = !logging && loggedFrames.length > 0;
     
-    if (logging) {
-        downloadButton.hide();
-    } else if (loggedFrames.length > 0) {
+    if (showDownloadButton) {
         downloadButton.show();
+        
+        buttonWidth = (windowWidth / 2) - (3 * padding);
+        loggingButton.size(buttonWidth, buttonHeight);        
+        
+        downloadButton.size(buttonWidth, buttonHeight);
+        downloadButton.position(buttonWidth + (2 * padding), windowHeight - padding - buttonHeight);
+    } else {
+        downloadButton.hide();
     }
     
     cameraDropdown.position(padding, padding);
@@ -233,8 +241,10 @@ function toggleLogging() {
     if (!logging) {
         loggedFrames = [];
         loggingButton.html("Stop");
+        loggingButton.style('background', '#ff0000');
     } else {
         loggingButton.html("Start");
+        loggingButton.style('background', '#00ff00');
     }
 
     logging = !logging;

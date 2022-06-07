@@ -2,7 +2,7 @@ let video;
 let detector;
 let poses = [];
 let updateRate = 30;
-let scoreThreshold = 0.5;
+let scoreThreshold = 0.3;
 let offset = {x: 0, y: 0};
 let aspectFillScale = 1;
 
@@ -11,9 +11,10 @@ let loggingButton;
 let downloadButton;
 let cameraDropdown;
 let currentCameraId;
+let detectorModel = poseDetection.SupportedModels.MoveNet;
 
 async function setup() {
-    detector = await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet);
+    detector = await poseDetection.createDetector(detectorModel);
 
     startCameraCapture();
 
@@ -187,7 +188,7 @@ function drawSkeleton() {
     // Loop through all the poses detected
     for (let i = 0; i < poses.length; i += 1) {
         const pose = poses[i];
-        poseDetection.util.getAdjacentPairs("MoveNet").forEach(([i, j]) => {
+        poseDetection.util.getAdjacentPairs(detectorModel).forEach(([i, j]) => {
             const kp1 = pose.keypoints[i];
             const kp2 = pose.keypoints[j];
 
@@ -217,7 +218,7 @@ function updateUI() {
     
     if (logging) {
         downloadButton.hide();
-    } else if (loggedPoints.length > 0) {
+    } else if (loggedFrames.length > 0) {
         downloadButton.show();
     }
     
@@ -226,11 +227,11 @@ function updateUI() {
 
 
 // Logging
-let loggedPoints = [];
+let loggedFrames = [];
 
 function toggleLogging() {
     if (!logging) {
-        loggedPoints = [];
+        loggedFrames = [];
         loggingButton.html("Stop");
     } else {
         loggingButton.html("Start");
@@ -241,6 +242,7 @@ function toggleLogging() {
     updateUI();
 }
 
+
 function logPoints() {
     if (!logging) {
         return;
@@ -249,36 +251,37 @@ function logPoints() {
     let timestamp = luxon.DateTime.now().toISO();
     
     for (let i = 0; i < poses.length; i += 1) {
-      // For each pose detected, loop through all the keypoints
-      const pose = poses[i];
-      for (let j = 0; j < pose.keypoints.length; j += 1) {
-        // A keypoint is an object describing a body part (like rightArm or leftShoulder)
-        const keypoint = pose.keypoints[j];
-        // Only log points above the threshold
-        if (keypoint.score > scoreThreshold) {
-            loggedPoint = {time: timestamp,
-                           name: keypoint.name,
-                           x: keypoint.x,
-                           y: keypoint.y, 
-                           score: keypoint.score};
-            loggedPoints.push(loggedPoint);
-        }
-      }
+        // For each pose detected, loop through all the keypoints
+        const pose = poses[i];
+        let loggedFrame = {time: timestamp};
 
-      return; // Only draw one pose
+        // The order of the pose keypoints is alwasy the same
+        pose.keypoints.forEach(keypoint => {
+            // log a null value for invalid points to keep the frame format uniform
+            const validKeypoint = (keypoint.score > scoreThreshold);
+            const xValue =  validKeypoint ? keypoint.x : null;
+            const yValue = validKeypoint ? keypoint.y : null;
+
+            loggedFrame[keypoint.name + '_x'] = xValue;
+            loggedFrame[keypoint.name + '_y'] = yValue;
+        });
+        
+        loggedFrames.push(loggedFrame);
+
+      return; // Only log one pose
     }
 }
 
 function convertToCSV(arr) {
-  const array = [Object.keys(arr[0])].concat(arr)
+    const array = [Object.keys(arr[0])].concat(arr);
 
-  return array.map(it => {
-    return Object.values(it).toString()
-  }).join('\n')
+    return array.map(it => {
+        return Object.values(it).toString()
+    }).join('\n');
 }
 
 function downloadCSV() {
-    var csvString = convertToCSV(loggedPoints);
+    var csvString = convertToCSV(loggedFrames);
     var csvBlob = new Blob([csvString]);
     
     var a = window.document.createElement("a");

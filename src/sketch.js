@@ -225,12 +225,10 @@ function drawAngles() {
         Object.keys(joints).forEach(jointName => {
             const j = joints[jointName];
             
-            if (j[0].score > scoreThreshold && j[1].score > scoreThreshold && j[2].score > scoreThreshold) {
-                
-                let vectors = calculateVectorsFor(j)
-                let angle = vectors.angle.toFixed(0);
-                let jointPoint = convertPointForCanvas(j[1]);
-                
+            if (j.isValid) {
+                let angle = j.angle;
+                let jointPoint = convertPointForCanvas(j.position);
+
                 stroke(255);
                 strokeWeight(4);
                 text(angle, jointPoint.x, jointPoint.y);
@@ -248,31 +246,49 @@ function convertPointForCanvas(point) {
     };
 }
 
+class Joint {
+    constructor(keypoints) {
+        this.keypoints = keypoints;
+    }
+
+    get position() {
+          return {x: this.keypoints[1].x, y: this.keypoints[1].y}
+    }
+
+    get vectors() {
+        const v1 = createVector(this.keypoints[1].x - this.keypoints[0].x, this.keypoints[1].y - this.keypoints[0].y);
+        const v2 = createVector(this.keypoints[1].x - this.keypoints[2].x, this.keypoints[1].y - this.keypoints[2].y);
+
+        return {
+            angle: v1.angleBetween(v2),
+            v1: v1,
+            v2: v2
+        };    
+    }
+
+    get angle() {
+        return this.vectors.angle.toFixed(0);
+    }
+    
+    get isValid() {
+        return this.keypoints[0].score > scoreThreshold && this.keypoints[1].score > scoreThreshold && this.keypoints[2].score > scoreThreshold;
+    }
+}
+
 function getJointsFor(pose) {
     const keypoints = pose.keypoints;
     return {
         // nose is good for quick testing without needing fully body in frame
-        // nose: [keypoints[keypointIndexes.left_eye], keypoints[keypointIndexes.nose], keypoints[keypointIndexes.right_eye]],
-        left_elbow: [keypoints[keypointIndexes.left_shoulder], keypoints[keypointIndexes.left_elbow], keypoints[keypointIndexes.left_wrist]],
-        right_elbow: [keypoints[keypointIndexes.right_shoulder], keypoints[keypointIndexes.right_elbow], keypoints[keypointIndexes.right_wrist]],
-        left_armpit: [keypoints[keypointIndexes.left_hip], keypoints[keypointIndexes.left_shoulder], keypoints[keypointIndexes.left_elbow]],
-        right_armpit: [keypoints[keypointIndexes.right_hip], keypoints[keypointIndexes.right_shoulder], keypoints[keypointIndexes.right_elbow]],
-        left_knee: [keypoints[keypointIndexes.left_hip], keypoints[keypointIndexes.left_knee], keypoints[keypointIndexes.left_ankle]],
-        right_knee: [keypoints[keypointIndexes.right_hip], keypoints[keypointIndexes.right_knee], keypoints[keypointIndexes.right_ankle]],
+        // nose: new Joint([keypoints[keypointIndexes.left_eye], keypoints[keypointIndexes.nose], keypoints[keypointIndexes.right_eye]]),        
+        left_elbow: new Joint([keypoints[keypointIndexes.left_shoulder], keypoints[keypointIndexes.left_elbow], keypoints[keypointIndexes.left_wrist]]),
+        right_elbow: new Joint([keypoints[keypointIndexes.right_shoulder], keypoints[keypointIndexes.right_elbow], keypoints[keypointIndexes.right_wrist]]),
+        left_armpit: new Joint([keypoints[keypointIndexes.left_hip], keypoints[keypointIndexes.left_shoulder], keypoints[keypointIndexes.left_elbow]]),
+        right_armpit: new Joint([keypoints[keypointIndexes.right_hip], keypoints[keypointIndexes.right_shoulder], keypoints[keypointIndexes.right_elbow]]),
+        left_knee: new Joint([keypoints[keypointIndexes.left_hip], keypoints[keypointIndexes.left_knee], keypoints[keypointIndexes.left_ankle]]),
+        right_knee: new Joint([keypoints[keypointIndexes.right_hip], keypoints[keypointIndexes.right_knee], keypoints[keypointIndexes.right_ankle]]),
     };
 }
 
-function calculateVectorsFor(joint) {
-    const v1 = createVector(joint[1].x - joint[0].x, joint[1].y - joint[0].y);
-    const v2 = createVector(joint[1].x - joint[2].x, joint[1].y - joint[2].y);
-    
-    return {
-        angle: v1.angleBetween(v2),
-        v1: v1,
-        v2: v2
-    };
-
-}
 
 function updateUI() {
     const padding = 20;
@@ -340,6 +356,20 @@ function logPoints() {
 
             loggedFrame[keypoint.name + '_x'] = xValue;
             loggedFrame[keypoint.name + '_y'] = yValue;
+        });
+        
+        const joints = getJointsFor(pose);
+        
+        Object.keys(joints).forEach(jointName => {
+            const j = joints[jointName];
+
+            let jointAngle = null;
+
+            if (j.isValid) {
+                jointAngle = j.angle;
+            }
+
+            loggedFrame[jointName + '_angle'] = jointAngle;
         });
         
         loggedFrames.push(loggedFrame);

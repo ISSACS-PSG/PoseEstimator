@@ -12,6 +12,19 @@ let downloadButton;
 let cameraDropdown;
 let currentCameraId;
 
+let jointsEnabled = {
+    nose: false, // nose is good for quick testing without needing fully body in frame
+    left_elbow: true,
+    right_elbow: true,
+    left_armpit: true,
+    right_armpit: true,
+    left_knee: true,
+    right_knee: true
+};
+
+let jointTargets = {};
+const jointTargetSize = {width: 50, height: 50};
+
 const detectorModel = poseDetection.SupportedModels.MoveNet;
 const keypointIndexes = poseDetection.util.getKeypointIndexByName(detectorModel);
 
@@ -33,6 +46,10 @@ async function setup() {
 
     updateCameraDropdown();
     updateUI();
+    
+    Object.keys(jointsEnabled).forEach(key => {
+        jointTargets[key] = touchDivFor(key);
+    });
 }
 
 // Camera Handling
@@ -225,7 +242,9 @@ function drawAngles() {
         Object.keys(joints).forEach(jointName => {
             const j = joints[jointName];
             
-            if (j.isValid) {
+            let jointPoint = convertPointForCanvas(j.position);
+            
+            if (j.enabled && j.isValid) {
                 let angle = j.angle;
                 let jointPoint = convertPointForCanvas(j.position);
 
@@ -233,6 +252,10 @@ function drawAngles() {
                 strokeWeight(4);
                 text(angle, jointPoint.x, jointPoint.y);
             }
+            
+            // console.log(jointTargets);
+            // !!!: This will lead to unexpected results when doing more than one pose
+            jointTargets[jointName].position(jointPoint.x - (jointTargetSize.width/2), jointPoint.y - (jointTargetSize.height/2));
         });
         
         return; // Only draw angles for one pose
@@ -246,9 +269,25 @@ function convertPointForCanvas(point) {
     };
 }
 
+function touchDivFor(joint) {
+    div = createDiv();
+    div.style('font-size', '16px');
+    div.position(0, 0);
+    div.size(jointTargetSize.width, jointTargetSize.height);
+    div.style('background', 'rgba(0,0,0,0)');
+
+    div.mouseClicked(function() {
+        console.log(joint);
+        jointsEnabled[joint] = !jointsEnabled[joint];
+    });
+    
+    return div;
+}
+
 class Joint {
-    constructor(keypoints) {
+    constructor(keypoints, enabled=true) {
         this.keypoints = keypoints;
+        this.enabled = enabled;
     }
 
     get position() {
@@ -279,13 +318,13 @@ function getJointsFor(pose) {
     const keypoints = pose.keypoints;
     return {
         // nose is good for quick testing without needing fully body in frame
-        // nose: new Joint([keypoints[keypointIndexes.left_eye], keypoints[keypointIndexes.nose], keypoints[keypointIndexes.right_eye]]),        
-        left_elbow: new Joint([keypoints[keypointIndexes.left_shoulder], keypoints[keypointIndexes.left_elbow], keypoints[keypointIndexes.left_wrist]]),
-        right_elbow: new Joint([keypoints[keypointIndexes.right_shoulder], keypoints[keypointIndexes.right_elbow], keypoints[keypointIndexes.right_wrist]]),
-        left_armpit: new Joint([keypoints[keypointIndexes.left_hip], keypoints[keypointIndexes.left_shoulder], keypoints[keypointIndexes.left_elbow]]),
-        right_armpit: new Joint([keypoints[keypointIndexes.right_hip], keypoints[keypointIndexes.right_shoulder], keypoints[keypointIndexes.right_elbow]]),
-        left_knee: new Joint([keypoints[keypointIndexes.left_hip], keypoints[keypointIndexes.left_knee], keypoints[keypointIndexes.left_ankle]]),
-        right_knee: new Joint([keypoints[keypointIndexes.right_hip], keypoints[keypointIndexes.right_knee], keypoints[keypointIndexes.right_ankle]]),
+        nose: new Joint([keypoints[keypointIndexes.left_eye], keypoints[keypointIndexes.nose], keypoints[keypointIndexes.right_eye]], jointsEnabled.nose),
+        left_elbow: new Joint([keypoints[keypointIndexes.left_shoulder], keypoints[keypointIndexes.left_elbow], keypoints[keypointIndexes.left_wrist]], jointsEnabled.left_elbow),
+        right_elbow: new Joint([keypoints[keypointIndexes.right_shoulder], keypoints[keypointIndexes.right_elbow], keypoints[keypointIndexes.right_wrist]], jointsEnabled.right_elbow),
+        left_armpit: new Joint([keypoints[keypointIndexes.left_hip], keypoints[keypointIndexes.left_shoulder], keypoints[keypointIndexes.left_elbow]], jointsEnabled.left_armpit),
+        right_armpit: new Joint([keypoints[keypointIndexes.right_hip], keypoints[keypointIndexes.right_shoulder], keypoints[keypointIndexes.right_elbow]], jointsEnabled.right_armpit),
+        left_knee: new Joint([keypoints[keypointIndexes.left_hip], keypoints[keypointIndexes.left_knee], keypoints[keypointIndexes.left_ankle]], jointsEnabled.left_knee),
+        right_knee: new Joint([keypoints[keypointIndexes.right_hip], keypoints[keypointIndexes.right_knee], keypoints[keypointIndexes.right_ankle]], jointsEnabled.right_knee),
     };
 }
 
@@ -363,13 +402,15 @@ function logPoints() {
         Object.keys(joints).forEach(jointName => {
             const j = joints[jointName];
 
-            let jointAngle = null;
+            if (j.enabled) {
+                let jointAngle = null;
 
-            if (j.isValid) {
-                jointAngle = j.angle;
+                if (j.isValid) {
+                    jointAngle = j.angle;
+                }
+
+                loggedFrame[jointName + '_angle'] = jointAngle;
             }
-
-            loggedFrame[jointName + '_angle'] = jointAngle;
         });
         
         loggedFrames.push(loggedFrame);

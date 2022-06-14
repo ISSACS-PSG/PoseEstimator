@@ -13,11 +13,13 @@ let cameraDropdown;
 let currentCameraId;
 
 let jointsEnabled = {
-    nose: false, // nose is good for quick testing without needing fully body in frame
+    // nose: false, // nose is good for quick testing without needing fully body in frame
     left_elbow: true,
     right_elbow: true,
     left_shoulder: true,
     right_shoulder: true,
+    left_hip: true,
+    right_hip: true,
     left_knee: true,
     right_knee: true
 };
@@ -338,11 +340,13 @@ function getJointsFor(pose) {
     const keypoints = pose.keypoints;
     return {
         // nose is good for quick testing without needing fully body in frame
-        nose: new Joint([keypoints[keypointIndexes.left_eye], keypoints[keypointIndexes.nose], keypoints[keypointIndexes.right_eye]], jointsEnabled.nose),
+        // nose: new Joint([keypoints[keypointIndexes.left_eye], keypoints[keypointIndexes.nose], keypoints[keypointIndexes.right_eye]], jointsEnabled.nose),
         left_elbow: new Joint([keypoints[keypointIndexes.left_shoulder], keypoints[keypointIndexes.left_elbow], keypoints[keypointIndexes.left_wrist]], jointsEnabled.left_elbow),
         right_elbow: new Joint([keypoints[keypointIndexes.right_shoulder], keypoints[keypointIndexes.right_elbow], keypoints[keypointIndexes.right_wrist]], jointsEnabled.right_elbow),
         left_shoulder: new Joint([keypoints[keypointIndexes.left_hip], keypoints[keypointIndexes.left_shoulder], keypoints[keypointIndexes.left_elbow]], jointsEnabled.left_shoulder),
         right_shoulder: new Joint([keypoints[keypointIndexes.right_hip], keypoints[keypointIndexes.right_shoulder], keypoints[keypointIndexes.right_elbow]], jointsEnabled.right_shoulder),
+        left_hip: new Joint([keypoints[keypointIndexes.left_shoulder], keypoints[keypointIndexes.left_hip], keypoints[keypointIndexes.left_knee]], jointsEnabled.left_hip),
+        right_hip: new Joint([keypoints[keypointIndexes.right_shoulder], keypoints[keypointIndexes.right_hip], keypoints[keypointIndexes.right_knee]], jointsEnabled.right_hip),
         left_knee: new Joint([keypoints[keypointIndexes.left_hip], keypoints[keypointIndexes.left_knee], keypoints[keypointIndexes.left_ankle]], jointsEnabled.left_knee),
         right_knee: new Joint([keypoints[keypointIndexes.right_hip], keypoints[keypointIndexes.right_knee], keypoints[keypointIndexes.right_ankle]], jointsEnabled.right_knee),
     };

@@ -433,13 +433,16 @@ function logPoints() {
         if (loggingType == LoggingTypes.Keypoints || loggingType == LoggingTypes.Both) {
             // The order of the pose keypoints is alwasy the same
             pose.keypoints.forEach(keypoint => {
-                // log a null value for invalid points to keep the frame format uniform
-                const validKeypoint = (keypoint.score > scoreThreshold);
-                const xValue =  validKeypoint ? keypoint.x : null;
-                const yValue = validKeypoint ? keypoint.y : null;
+                
+                if (!keypoint.name.includes("ear") && !keypoint.name.includes("eye")) {
+                    // log a null value for invalid points to keep the frame format uniform
+                    const validKeypoint = (keypoint.score > scoreThreshold);
+                    const xValue =  validKeypoint ? keypoint.x : null;
+                    const yValue = validKeypoint ? keypoint.y : null;
 
-                loggedFrame[keypoint.name + '_x'] = xValue;
-                loggedFrame[keypoint.name + '_y'] = yValue;
+                    loggedFrame[keypoint.name + '_x'] = xValue;
+                    loggedFrame[keypoint.name + '_y'] = yValue;
+                }
             });
         }
         

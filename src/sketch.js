@@ -25,6 +25,14 @@ let jointsEnabled = {
 let jointTargets = {};
 const jointTargetSize = {width: 50, height: 50};
 
+let loggingTypeDropdown;
+const LoggingTypes = {
+    Joint_Angles: "Joint Angles",
+    Keypoints: "Keypoints",
+    Both: "Both"
+}; 
+let loggingType = LoggingTypes.Joint_Angles; 
+
 const detectorModel = poseDetection.SupportedModels.MoveNet;
 const keypointIndexes = poseDetection.util.getKeypointIndexByName(detectorModel);
 
@@ -43,6 +51,12 @@ async function setup() {
     downloadButton.mousePressed(downloadCSV);
 
     downloadButton.hide();
+
+    loggingTypeDropdown = createSelect();
+    loggingTypeDropdown.changed(handleLoggingTypeSelection);
+    Object.keys(LoggingTypes).forEach(t => {
+        loggingTypeDropdown.option(LoggingTypes[t]);
+    });
 
     updateCameraDropdown();
     updateUI();
@@ -123,6 +137,10 @@ async function updateCameraDropdown() {
 
 function handleCameraSelection() {
     startCameraCapture(cameraDropdown.value());
+}
+
+function handleLoggingTypeSelection() {
+    loggingType = loggingTypeDropdown.value();
 }
 
 async function videoReady() {
@@ -354,6 +372,8 @@ function updateUI() {
     }
     
     cameraDropdown.position(padding, padding);
+    
+    loggingTypeDropdown.position(windowWidth - loggingTypeDropdown.size().width - padding, padding);
 }
 
 
@@ -388,32 +408,36 @@ function logPoints() {
         const pose = poses[i];
         let loggedFrame = {time: timestamp};
 
-        // The order of the pose keypoints is alwasy the same
-        pose.keypoints.forEach(keypoint => {
-            // log a null value for invalid points to keep the frame format uniform
-            const validKeypoint = (keypoint.score > scoreThreshold);
-            const xValue =  validKeypoint ? keypoint.x : null;
-            const yValue = validKeypoint ? keypoint.y : null;
-
-            loggedFrame[keypoint.name + '_x'] = xValue;
-            loggedFrame[keypoint.name + '_y'] = yValue;
-        });
+        if (loggingType == LoggingTypes.Joint_Angles || loggingType == LoggingTypes.Both) {
+            const joints = getJointsFor(pose);
         
-        const joints = getJointsFor(pose);
-        
-        Object.keys(joints).forEach(jointName => {
-            const j = joints[jointName];
+            Object.keys(joints).forEach(jointName => {
+                const j = joints[jointName];
 
-            if (j.enabled) {
-                let jointAngle = null;
+                if (j.enabled) {
+                    let jointAngle = null;
 
-                if (j.isValid) {
-                    jointAngle = j.angle;
+                    if (j.isValid) {
+                        jointAngle = j.angle;
+                    }
+
+                    loggedFrame[jointName + '_angle'] = jointAngle;
                 }
+            });
+        }
+        
+        if (loggingType == LoggingTypes.Keypoints || loggingType == LoggingTypes.Both) {
+            // The order of the pose keypoints is alwasy the same
+            pose.keypoints.forEach(keypoint => {
+                // log a null value for invalid points to keep the frame format uniform
+                const validKeypoint = (keypoint.score > scoreThreshold);
+                const xValue =  validKeypoint ? keypoint.x : null;
+                const yValue = validKeypoint ? keypoint.y : null;
 
-                loggedFrame[jointName + '_angle'] = jointAngle;
-            }
-        });
+                loggedFrame[keypoint.name + '_x'] = xValue;
+                loggedFrame[keypoint.name + '_y'] = yValue;
+            });
+        }
         
         loggedFrames.push(loggedFrame);
 

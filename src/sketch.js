@@ -16,8 +16,8 @@ let jointsEnabled = {
     nose: false, // nose is good for quick testing without needing fully body in frame
     left_elbow: true,
     right_elbow: true,
-    left_armpit: true,
-    right_armpit: true,
+    left_shoulder: true,
+    right_shoulder: true,
     left_knee: true,
     right_knee: true
 };
@@ -27,9 +27,9 @@ const jointTargetSize = {width: 50, height: 50};
 
 let loggingTypeDropdown;
 const LoggingTypes = {
-    Joint_Angles: "Joint Angles",
-    Keypoints: "Keypoints",
-    Both: "Both"
+    Joint_Angles: "Record angles",
+    Keypoints: "Record positions",
+    Both: "Record both"
 }; 
 let loggingType = LoggingTypes.Joint_Angles; 
 
@@ -43,7 +43,7 @@ async function setup() {
 
     createCanvas(windowWidth, windowHeight);
     
-    loggingButton = createButton('Start');
+    loggingButton = createButton('Start data log');
     loggingButton.mousePressed(toggleLogging);
     loggingButton.style('background', '#00ff00');
 
@@ -341,8 +341,8 @@ function getJointsFor(pose) {
         nose: new Joint([keypoints[keypointIndexes.left_eye], keypoints[keypointIndexes.nose], keypoints[keypointIndexes.right_eye]], jointsEnabled.nose),
         left_elbow: new Joint([keypoints[keypointIndexes.left_shoulder], keypoints[keypointIndexes.left_elbow], keypoints[keypointIndexes.left_wrist]], jointsEnabled.left_elbow),
         right_elbow: new Joint([keypoints[keypointIndexes.right_shoulder], keypoints[keypointIndexes.right_elbow], keypoints[keypointIndexes.right_wrist]], jointsEnabled.right_elbow),
-        left_armpit: new Joint([keypoints[keypointIndexes.left_hip], keypoints[keypointIndexes.left_shoulder], keypoints[keypointIndexes.left_elbow]], jointsEnabled.left_armpit),
-        right_armpit: new Joint([keypoints[keypointIndexes.right_hip], keypoints[keypointIndexes.right_shoulder], keypoints[keypointIndexes.right_elbow]], jointsEnabled.right_armpit),
+        left_shoulder: new Joint([keypoints[keypointIndexes.left_hip], keypoints[keypointIndexes.left_shoulder], keypoints[keypointIndexes.left_elbow]], jointsEnabled.left_shoulder),
+        right_shoulder: new Joint([keypoints[keypointIndexes.right_hip], keypoints[keypointIndexes.right_shoulder], keypoints[keypointIndexes.right_elbow]], jointsEnabled.right_shoulder),
         left_knee: new Joint([keypoints[keypointIndexes.left_hip], keypoints[keypointIndexes.left_knee], keypoints[keypointIndexes.left_ankle]], jointsEnabled.left_knee),
         right_knee: new Joint([keypoints[keypointIndexes.right_hip], keypoints[keypointIndexes.right_knee], keypoints[keypointIndexes.right_ankle]], jointsEnabled.right_knee),
     };
@@ -383,10 +383,10 @@ let loggedFrames = [];
 function toggleLogging() {
     if (!logging) {
         loggedFrames = [];
-        loggingButton.html("Stop");
+        loggingButton.html("Stop data log");
         loggingButton.style('background', '#ff0000');
     } else {
-        loggingButton.html("Start");
+        loggingButton.html("Start data log");
         loggingButton.style('background', '#00ff00');
     }
 

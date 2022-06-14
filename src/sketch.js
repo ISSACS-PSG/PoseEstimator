@@ -277,8 +277,10 @@ function touchDivFor(joint) {
     div.style('background', 'rgba(0,0,0,0)');
 
     div.mouseClicked(function() {
-        console.log(joint);
-        jointsEnabled[joint] = !jointsEnabled[joint];
+        console.log("Clicked: " + joint);
+        if (!logging) {
+            jointsEnabled[joint] = !jointsEnabled[joint];            
+        }
     });
     
     return div;

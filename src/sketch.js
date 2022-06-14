@@ -383,12 +383,13 @@ function updateUI() {
 
 // Logging
 let loggedFrames = [];
-
+let loggingStarted;
 function toggleLogging() {
     if (!logging) {
         loggedFrames = [];
         loggingButton.html("Stop data log");
         loggingButton.style('background', '#ff0000');
+        loggingStarted = luxon.DateTime.now();
     } else {
         loggingButton.html("Start data log");
         loggingButton.style('background', '#00ff00');
@@ -405,7 +406,7 @@ function logPoints() {
         return;
     }
     
-    let timestamp = luxon.DateTime.now().toISO();
+    let timestamp = (luxon.DateTime.now() - loggingStarted) / 1000;
     
     for (let i = 0; i < poses.length; i += 1) {
         // For each pose detected, loop through all the keypoints

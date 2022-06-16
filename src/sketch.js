@@ -135,6 +135,8 @@ async function updateCameraDropdown() {
     if (currentCameraId) {
         cameraDropdown.selected(currentCameraId);
     }
+    
+    cameraDropdown.hide();
 }
 
 function handleCameraSelection() {
@@ -355,22 +357,24 @@ function getJointsFor(pose) {
 
 function updateUI() {
     const padding = 20;
-    let buttonWidth = windowWidth - (2 * padding);
-    const buttonHeight = windowHeight * 0.1;
+    let buttonWidth = min((windowWidth - (2 * padding)), 200);
+    const buttonHeight = 50;
     
     loggingButton.size(buttonWidth, buttonHeight);
-    loggingButton.position(padding, windowHeight - padding - buttonHeight);
+    loggingButton.position((windowWidth - buttonWidth) / 2, windowHeight - padding - buttonHeight);
+    // loggingButton.center('horizontal');
     
     const showDownloadButton = !logging && loggedFrames.length > 0;
     
     if (showDownloadButton) {
         downloadButton.show();
         
-        buttonWidth = (windowWidth - (3 * padding)) / 2 ;
+        buttonWidth = min((windowWidth - (3 * padding)) / 2, 200) ;
+        loggingButton.position((windowWidth - (2 * buttonWidth) - padding) / 2,windowHeight - padding - buttonHeight)
         loggingButton.size(buttonWidth, buttonHeight);        
         
         downloadButton.size(buttonWidth, buttonHeight);
-        downloadButton.position(buttonWidth + (2 * padding), windowHeight - padding - buttonHeight);
+        downloadButton.position(loggingButton.position().x + buttonWidth + padding , windowHeight - padding - buttonHeight);
     } else {
         downloadButton.hide();
     }

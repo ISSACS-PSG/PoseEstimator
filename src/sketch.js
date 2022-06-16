@@ -361,8 +361,7 @@ function updateUI() {
     const buttonHeight = 50;
     
     loggingButton.size(buttonWidth, buttonHeight);
-    loggingButton.position((windowWidth - buttonWidth) / 2, windowHeight - padding - buttonHeight);
-    // loggingButton.center('horizontal');
+    loggingButton.position(padding, windowHeight - padding - buttonHeight);
     
     const showDownloadButton = !logging && loggedFrames.length > 0;
     
@@ -370,7 +369,7 @@ function updateUI() {
         downloadButton.show();
         
         buttonWidth = min((windowWidth - (3 * padding)) / 2, 200) ;
-        loggingButton.position((windowWidth - (2 * buttonWidth) - padding) / 2,windowHeight - padding - buttonHeight)
+        loggingButton.position(padding,windowHeight - padding - buttonHeight)
         loggingButton.size(buttonWidth, buttonHeight);        
         
         downloadButton.size(buttonWidth, buttonHeight);

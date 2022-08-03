@@ -1,4 +1,4 @@
-# Pose Estimator
+# Human Goniometer
 
 This project is a small static site built on top of [p5.js](https://p5js.org) and [MoveNet](https://tensorflow.google.cn/hub/tutorials/movenet) to estimate, visualize and record poses using a webcam.
 
